@@ -1,0 +1,7 @@
+streamlit
+pandas
+pypdf
+python-docx
+azure-storage-blob
+python-dotenv
+pytest
