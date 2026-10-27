@@ -38,3 +38,39 @@ def test_detects_two_mobile_numbers():
     result = detect_sensitive_data("9876543210 and 8765432109")
 
     assert result == {"phone": 2}
+
+from dlp.detector import detect_sensitive_data, passes_luhn
+
+
+def test_detects_pan():
+    findings = detect_sensitive_data("PAN: ABCDE1234F")
+    assert findings["pan"] == 1
+
+
+def test_detects_aadhaar_like_identifier():
+    findings = detect_sensitive_data("ID: 1234 5678 9012")
+    assert findings["aadhaar_like"] == 1
+
+
+def test_detects_password_assignment():
+    findings = detect_sensitive_data("password=SuperSecret123")
+    assert findings["password"] == 1
+
+
+def test_detects_api_key_assignment():
+    findings = detect_sensitive_data("api_key=abcd1234efgh5678")
+    assert findings["api_key_like"] == 1
+
+
+def test_rejects_invalid_luhn_number():
+    assert passes_luhn("4111111111111112") is False
+
+
+def test_accepts_valid_luhn_number():
+    assert passes_luhn("4111111111111111") is True
+
+
+def test_detection_returns_counts_not_sensitive_values():
+    findings = detect_sensitive_data("Contact alice@example.com")
+    assert findings == {"email": 1}
+    assert "alice@example.com" not in str(findings)
