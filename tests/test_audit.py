@@ -36,3 +36,24 @@ def test_record_event_stores_audit_metadata(tmp_path, monkeypatch):
         "quarantine",
         "FLAGGED",
     )
+
+def test_record_event_stores_failed_status(tmp_path, monkeypatch):
+    test_db = tmp_path / "audit.db"
+    monkeypatch.setattr(audit, "DB_PATH", test_db)
+
+    audit.record_event(
+        filename="sample.txt",
+        file_hash="abc123",
+        findings="{}",
+        risk="UNKNOWN",
+        action="QUARANTINE",
+        destination="unavailable",
+        status="STORAGE_FAILED",
+    )
+
+    with sqlite3.connect(test_db) as connection:
+        row = connection.execute(
+            "SELECT destination, status FROM audit_log"
+        ).fetchone()
+
+    assert row == ("unavailable", "STORAGE_FAILED")
