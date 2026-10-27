@@ -47,3 +47,18 @@ def test_existing_destination_is_not_overwritten(tmp_path):
         assert source.exists()
     finally:
         destination.unlink(missing_ok=True)
+
+
+def test_route_file_does_not_use_source_directory_components(tmp_path):
+    outside_dir = tmp_path / "outside"
+    outside_dir.mkdir()
+
+    source = outside_dir / "sample.txt"
+    source.write_text("Safe test content", encoding="utf-8")
+
+    destination = route_file(source, "quarantine")
+
+    assert destination.parent == ZONES["quarantine"]
+    assert destination.name == "sample.txt"
+    assert destination.exists()
+    assert not source.exists()

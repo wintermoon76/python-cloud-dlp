@@ -21,18 +21,23 @@ def passes_luhn(number: str) -> bool:
     return total % 10 == 0
 
 
+
 def find_payment_cards(text: str) -> list[str]:
-    """Find candidate card numbers that pass the Luhn checksum."""
+    """Find Luhn-valid payment-card candidates without trailing separators."""
     candidates = re.findall(
         r"(?<!\d)(?:\d[ -]?){12,18}\d(?!\d)",
         text,
     )
 
-    return [
-        candidate
-        for candidate in candidates
-        if passes_luhn(candidate)
-    ]
+    valid_cards = []
+
+    for candidate in candidates:
+        normalized = re.sub(r"[ -]", "", candidate)
+
+        if passes_luhn(normalized):
+            valid_cards.append(candidate.rstrip(" -"))
+
+    return valid_cards
 
 
 PATTERNS = {
