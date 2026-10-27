@@ -10,6 +10,8 @@ from dlp.audit import DB_PATH
 from dlp.pipeline import scan_text
 from dlp.hybrid_storage import save_file_hybrid
 
+MAX_FILE_SIZE_MB = 10
+MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 st.set_page_config(
     page_title="Cloud DLP System",
@@ -23,7 +25,7 @@ st.caption("Detect sensitive data and evaluate DLP policies.")
 st.info(
     "Upload the file to scan and store it in Azure. "
     "Blob Storage when available, with local storage as a fallback."
-)
+)   
 
 
 def extract_text(uploaded_file):
@@ -65,14 +67,24 @@ def extract_text(uploaded_file):
 uploaded_file = st.file_uploader(
     "Upload a file to scan",
     type=["txt", "csv", "json", "log", "pdf", "doc", "docx"],
+    max_upload_size=MAX_FILE_SIZE_MB,
+    help=f"Maximum file size: {MAX_FILE_SIZE_MB} MB.",
 )
 
 if uploaded_file is not None:
     st.write(f"**Selected file:** {uploaded_file.name}")
 
     if st.button("Scan and store file", type="primary"):
-        try:
-            extracted_text = extract_text(uploaded_file)
+    try:
+        file_bytes = uploaded_file.getvalue()
+
+        if len(file_bytes) > MAX_FILE_SIZE_BYTES:
+            st.error(
+                f"File exceeds the {MAX_FILE_SIZE_MB} MB upload limit."
+            )
+            st.stop()
+
+        extracted_text = extract_text(uploaded_file)
 
             if not extracted_text.strip():
                 st.warning(
@@ -89,7 +101,7 @@ if uploaded_file is not None:
 
             # Store the ORIGINAL file in Azure or use local fallback.
             storage_result = save_file_hybrid(
-              file_bytes=uploaded_file.getvalue(),
+    file_bytes=file_bytes,
     filename=uploaded_file.name,
     action=result["action"],
     findings=result["findings"],
